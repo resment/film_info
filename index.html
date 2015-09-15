@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="description" content="电影信息查询及电影简介生成工具，可根据豆瓣/IMDb的ID/URL或电影名自动生成特定模板格式的电影介绍">
+    <meta name="keywords" content="电影查询 电影简介 电影简介生成 电影介绍生成" />
+    <meta name="author" content="zzwab">
+    <link rel="icon" href="/static/favicon.ico">
+
+    <title>电影信息查询</title>
+
+    <link rel="stylesheet" href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css">
+    <link href="/static/css/movieinfogen.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container">
+      <div class="header clearfix">
+        
+        <h3 class="text-muted">电影信息查询</h3>
+      </div>
+
+      <form class="form-inline">
+        <div class="form-group">
+          <label class="sr-only" for="input_value">Input value</label>
+          <input type="text" class="form-control" placeholder="豆瓣/IMDb的ID/URL或电影名" id="input_value" />
+        </div>
+        <div class="checkbox">
+          <label class="checkbox">
+            <input type="checkbox" id="poster"> 海报
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="award"> 奖项
+          </label>
+        </div>
+        <button class="btn btn-success" id="query_btn" >查询</button>
+      </form>
+
+      <br>
+
+      <div class="zero-clipboard">
+        <button class="btn btn-clipboard" id="copy_btn">复制</button>
+      </div>
+      <textarea class="form-control" rows=22 id="movie_info"></textarea>
+
+      <footer class="footer">
+        <p>&copy; resme.net 2015 <a href="/changelog" class="footer">更新日志</a> <a href="mailto:echo.resment@gmail.com" class="footer">问题反馈</a></p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    <script src="http://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+    <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <script src="/static/js/jquery.cookie.js"></script>
+    <script src="/static/js/jquery.zclip.min.js"></script>
+
+    <script type="text/javascript">
+      $('.btn-clipboard').zclip({
+        path: '/static/flash/ZeroClipboard.swf',
+        copy: function(){return $("#movie_info").val().replace(/\n/g, "\r\n");},
+        afterCopy: function(){
+          $("#copy_btn").html("已复制");
+        }
+      });
+
+      $(function(){
+        $("#query_btn").click(function(){
+          $.ajax({
+            type: "post",
+            url: "/get_info",
+            data: {
+              value: $("#input_value").val(),
+              poster: $("#poster").prop("checked") ? "1": "0",
+              award: $("#award").prop("checked") ? "1": "0"
+            },
+            dataType: "json",
+            beforeSend: function(){
+              $("#query_btn").attr("disabled", true);
+              $("#query_btn").html("查询中");
+            },
+            success: function(data){
+              if (data.hasOwnProperty("token_code")) {
+                $.cookie("token_code", data["token_code"], { expires: 30 });
+              }
+              if (data.hasOwnProperty("refresh_token_code")) {
+                $.cookie("refresh_token_code", data["refresh_token_code"], { expires: 30 });
+              }
+              $("#movie_info").val(data["movie_info"]);
+            },
+            error: function(){
+              alert("Error occured!");
+            },
+            complete: function(){
+              $("#query_btn").removeAttr("disabled");
+              $("#query_btn").html("查询");
+              $("#copy_btn").html("复制");
+            }
+          });
+          return false;
+        });
+      });
+    </script>
+  </body>
+</html>
